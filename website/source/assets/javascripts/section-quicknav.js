@@ -2,7 +2,7 @@
 // more than two H2/H3/H4 headers.
 document.addEventListener("turbolinks:load", function() {
     var headers = $('#inner').find('h2, h3, h4');
-    if (window.location.pathname !== "/docs/index.html" && headers.length > 2 && $("div#inner-quicknav").length === 0) {
+    if (window.location.pathname !== "/docs/index.html" && $("div#inner-quicknav").length === 0) {
         // Build the quick-nav HTML:
         $("#inner h1").first().after(
             '<div id="inner-quicknav">' +
