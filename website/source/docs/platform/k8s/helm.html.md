@@ -532,7 +532,7 @@ ui:
     type: LoadBalancer
 ```
 
-The below `values.yaml` results in a three server Consul Enterprise cluster with 100GB of storage and automatic Connect injection for annotated pods in the "my-app" namespace.
+The below `values.yaml` results in a three server Consul Enterprise cluster with 100GB of storage and automatic Connect injection for annotated pods in any namespace labeled with `connect-inject: true`.
 
 Note, this would require a secret that contains the enterprise license key.
 
@@ -556,7 +556,9 @@ client:
 connectInject:
   enabled: true
   default: false
-  namespaceSelector: "my-app"
+  namespaceSelector: |
+    matchLabels:
+      "connect-inject": "true"
 ```
 
 ## Customizing the Helm Chart
