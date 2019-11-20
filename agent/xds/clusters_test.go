@@ -112,6 +112,44 @@ func TestClustersFromSnapshot(t *testing.T) {
 			},
 		},
 		{
+			name:   "custom-limits-max-connections-only",
+			create: proxycfg.TestConfigSnapshot,
+			setup: func(snap *proxycfg.ConfigSnapshot) {
+				for i := range snap.Proxy.Upstreams {
+					// Use Upstreams[i] syntax to modify the actual ConfigSnapshot
+					// instead of copying the Upstream in the range
+					if snap.Proxy.Upstreams[i].Config == nil {
+						snap.Proxy.Upstreams[i].Config = map[string]interface{}{}
+					}
+
+					snap.Proxy.Upstreams[i].Config["limits"] = map[string]interface{}{
+						"max_connections": 500,
+					}
+				}
+			},
+		},
+		{
+			name:   "custom-limits",
+			create: proxycfg.TestConfigSnapshot,
+			setup: func(snap *proxycfg.ConfigSnapshot) {
+				for i := range snap.Proxy.Upstreams {
+					// We check if Config is nil because the prepared_query upstream is
+					// initialized without a Config map. Use Upstreams[i] syntax to
+					// modify the actual ConfigSnapshot instead of copying the Upstream
+					// in the range.
+					if snap.Proxy.Upstreams[i].Config == nil {
+						snap.Proxy.Upstreams[i].Config = map[string]interface{}{}
+					}
+
+					snap.Proxy.Upstreams[i].Config["limits"] = map[string]interface{}{
+						"max_connections":     500,
+						"max_queued_requests": 600,
+						"max_requests":        700,
+					}
+				}
+			},
+		},
+		{
 			name:   "connect-proxy-with-chain",
 			create: proxycfg.TestConfigSnapshotDiscoveryChain,
 			setup:  nil,

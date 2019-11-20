@@ -234,12 +234,24 @@ func (s *Server) makeUpstreamClusterForPreparedQuery(upstream structs.Upstream, 
 					},
 				},
 			},
+			CircuitBreakers: &envoycluster.CircuitBreakers{
+				Thresholds: makeThresholdsIfNeeded(cfg.Limits),
+			},
 			// Having an empty config enables outlier detection with default config.
 			OutlierDetection: &envoycluster.OutlierDetection{},
 		}
 		if cfg.Protocol == "http2" || cfg.Protocol == "grpc" {
 			c.Http2ProtocolOptions = &envoycore.Http2ProtocolOptions{}
 		}
+		// if cfg.MaxConnections != 0 {
+		// 	c.CircuitBreakers = &envoycluster.CircuitBreakers{
+		// 		Thresholds: []*envoycluster.CircuitBreakers_Thresholds{
+		// 			{
+		// 				MaxConnections: makeUint32Value(cfg.MaxConnections),
+		// 			},
+		// 		},
+		// 	}
+		// }
 	}
 
 	// Enable TLS upstream with the configured client certificate.
@@ -338,6 +350,9 @@ func (s *Server) makeUpstreamClustersForDiscoveryChain(
 						Ads: &envoycore.AggregatedConfigSource{},
 					},
 				},
+			},
+			CircuitBreakers: &envoycluster.CircuitBreakers{
+				Thresholds: makeThresholdsIfNeeded(cfg.Limits),
 			},
 			// Having an empty config enables outlier detection with default config.
 			OutlierDetection: &envoycluster.OutlierDetection{},
@@ -448,4 +463,26 @@ func (s *Server) makeMeshGatewayCluster(clusterName string, cfgSnap *proxycfg.Co
 		// Having an empty config enables outlier detection with default config.
 		OutlierDetection: &envoycluster.OutlierDetection{},
 	}, nil
+}
+
+func makeThresholdsIfNeeded(limits UpstreamLimits) []*envoycluster.CircuitBreakers_Thresholds {
+	var empty UpstreamLimits
+	// Make sure to not create any thresholds on the zero-value in order to rely on Envoy defaults
+	if limits == empty {
+		return nil
+	}
+
+	threshold := &envoycluster.CircuitBreakers_Thresholds{}
+	// Likewise, make sure to not set any threshold values on the zero-value in order to rely on Envoy defaults
+	if limits.MaxConnections != 0 {
+		threshold.MaxConnections = makeUint32Value(limits.MaxConnections)
+	}
+	if limits.MaxQueuedRequests != 0 {
+		threshold.MaxPendingRequests = makeUint32Value(limits.MaxQueuedRequests)
+	}
+	if limits.MaxRequests != 0 {
+		threshold.MaxRequests = makeUint32Value(limits.MaxRequests)
+	}
+
+	return []*envoycluster.CircuitBreakers_Thresholds{threshold}
 }
